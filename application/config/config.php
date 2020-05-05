@@ -25,7 +25,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 */
 /* TODO #2 */
 /* Ganti dengan URL Server web service: http://server.tukangunduh.my.id */
-$config['base_url'] = 'http://localhost:8001';
+$config['base_url'] = 'http://server.tukangunduh.my.id';
 
 /*
 |--------------------------------------------------------------------------

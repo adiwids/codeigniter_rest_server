@@ -83,10 +83,10 @@ $query_builder = TRUE;
 */
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => 'root',
-	'password' => '12345678',
-	'database' => 'db_ti17ab',
+	'hostname' => 'sql300.phpnet.us',
+	'username' => 'pn_25590480',
+	'password' => '3351vao2324',
+	'database' => 'pn_25590480_db_ti17ab',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
