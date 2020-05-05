@@ -1,5 +1,7 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
+require APPPATH.'/models/AuthenticationModel.php';
+
 class UserModel extends CI_Model
 {
 	const TABLE_NAME = 'tb_users';
@@ -32,20 +34,45 @@ class UserModel extends CI_Model
 
   public static function authenticate($username, $password)
   {
-		$result = $this->db->select(self::TABLE_NAME.'.*')
-											 ->whereRaw(sprintf('email = ? AND %s.token = ?', AuthenticationModel::TABLE_NAME), [$username, $password])
-										 	 ->join(Authentication::TABLE_NAME, sprintf('%1$s.uid = %2$s.uid AND %1$s.provider = %2$s.provider', self::TABLE_NAME, AuthenticationModel::TABLE_NAME))
-											 ->limit(1)
-											 ->get()
-											 ->result();
-	  return $this->convert_result_to_model($result[0]);
-  }
+		$instance = new UserModel();
+		$result = $instance->db->select(UserModel::TABLE_NAME.'.*')
+													 ->where(sprintf('%s.uid', AuthenticationModel::TABLE_NAME), $username)
+													 ->where(sprintf('%s.token', AuthenticationModel::TABLE_NAME), $password, TRUE)
+													 ->join(AuthenticationModel::TABLE_NAME, sprintf('%1$s.uid = %2$s.uid AND %1$s.provider = %2$s.provider', UserModel::TABLE_NAME, AuthenticationModel::TABLE_NAME))
+													 ->limit(1)
+													 ->get(UserModel::TABLE_NAME)
+													 ->result();
+
+	  return count($result) > 0 ? $instance->convert_result_to_model($result[0]) : NULL;
+	}
+
+	public static function register($attributes, $password)
+	{
+		$instance = UserModel::build($attributes);
+		$new_instance = NULL;
+		if($instance->is_email_taken($attributes['email'])) {
+			$new_instance = $instance->find_by_email($attributes['email']);
+		} else {
+			$new_instance = $instance->create($attributes);
+		}
+
+		$auth_attrs = [
+			'uid' => $new_instance->uid,
+			'provider' => $new_instance->provider,
+			'email' => $new_instance->email,
+			'token' => $password
+		];
+		$auth = new AuthenticationModel();
+		$auth->create($auth_attrs);
+
+		return $new_instance;
+	}
 
 	function find_by_email($email)
 	{
 		$result = $this->db->where('email', $email)->limit(1)->get(self::TABLE_NAME)->result();
 
-		if(!is_null($result)) {
+		if(count($result) > 0) {
 			return $this->convert_result_to_model($result[0]);
 		} else {
 			return NULL;
@@ -56,7 +83,7 @@ class UserModel extends CI_Model
 	{
 		$result = $this->db->where('uid', $uid)->limit(1)->get(self::TABLE_NAME)->result();
 
-		if(!is_null($result)) {
+		if(count($result) > 0) {
 			return $this->convert_result_to_model($result[0]);
 		} else {
 			return NULL;
@@ -78,7 +105,7 @@ class UserModel extends CI_Model
 		return $this->db->select('id')->from(self::TABLE_NAME)->where('email', $email)->count_all_results() > 0;
 	}
 
-	private function convert_result_to_model($result) {
+	function convert_result_to_model($result) {
 		if(is_null($result)) { return NULL; }
 
 		$instance = NULL;
@@ -89,6 +116,20 @@ class UserModel extends CI_Model
 		$instance = UserModel::build($attrs);
 
 		return $instance;
+	}
+
+	function to_array()
+	{
+		return [
+			"id" => $this->get_id(),
+			"uid" => $this->uid,
+			"email" => $this->email,
+			"provider" => $this->provider,
+			"nama_lengkap" => $this->nama_lengkap,
+			"nama_depan" => $this->nama_depan,
+			"nama_belakang" => $this->nama_belakang,
+			"foto" => $this->foto
+		];
 	}
 }
 ?>

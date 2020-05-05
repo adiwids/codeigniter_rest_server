@@ -24,7 +24,7 @@ class CustomerModel extends CI_Model
 	{
 		$result = $this->db->where('nik_pelanggan', $nik)->limit(1)->get(self::TABLE_NAME)->result();
 
-		if(!is_null($result)) {
+		if(count($result) > 0) {
 			return $this->convert_result_to_model($result[0]);
 		} else {
 			return NULL;

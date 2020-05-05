@@ -17,7 +17,7 @@ class RESTResource extends RESTServer {
     $credentials = $this->get_credentials();
     if(!is_null($credentials)) {
       $this->current_user = $this->user->authenticate($credentials['username'], $credentials['password']);
-      if(!is_null($this->current_user)) {
+      if(!is_null($this->current_user) && $this->current_user !== FALSE) {
         return TRUE;
       } else {
         return FALSE;
@@ -27,7 +27,7 @@ class RESTResource extends RESTServer {
     }
   }
 
-  private function get_credentials()
+  protected function get_credentials()
   {
     if(!isset($_SERVER['HTTP_AUTHORIZATION'])) { return NULL; }
 
