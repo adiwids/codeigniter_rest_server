@@ -131,5 +131,22 @@ class UserModel extends CI_Model
 			"foto" => $this->foto
 		];
 	}
+
+	function search($q = "")
+	{
+		$_q = trim($q);
+		$collection = [];
+		$query = $this->db;
+		if(strlen($_q) > 0) {
+			$query = $query->where('uid', $_q)->or_like('nama_lengkap', $_q);
+		}
+
+		$results = $query->get(self::TABLE_NAME)->result();
+		foreach($results as $result) {
+			array_push($collection, $this->convert_result_to_model($result));
+		}
+
+		return $collection;
+	}
 }
 ?>
