@@ -6,7 +6,7 @@ class UserModel extends CI_Model
 {
 	const TABLE_NAME = 'tb_users';
 
-	protected $id;
+	public $id;
 	public $email;
 	public $uid;
 	public $provider;
@@ -18,7 +18,7 @@ class UserModel extends CI_Model
 	public static function build($attributes = [])
 	{
 		$instance = new UserModel();
-		if(isset($attributes['id'])) { $instance->id = $attributes['id']; }
+		if(isset($attributes['id'])) { $instance->set_id($attributes['id']); }
 		if(isset($attributes['email'])) { $instance->email = $attributes['email']; }
 		if(isset($attributes['uid'])) { $instance->uid = $attributes['uid']; }
 		if(isset($attributes['provider'])) { $instance->provider = $attributes['provider']; }
@@ -30,7 +30,11 @@ class UserModel extends CI_Model
 		return $instance;
 	}
 
-  public function get_id() { return !is_null($this->id) ? intval($this->id) : 0; }
+	public function get_id() { return !is_null($this->id) ? intval($this->id) : 0; }
+
+	public function set_id($id) {
+		$this->id = intval($id);
+	}
 
   public static function authenticate($username, $password)
   {
@@ -68,6 +72,17 @@ class UserModel extends CI_Model
 		return $new_instance;
 	}
 
+	function find($id)
+	{
+		$result = $this->db->where('id', intval($id))->limit(1)->get(self::TABLE_NAME)->result();
+
+		if(count($result) > 0) {
+			return $this->convert_result_to_model($result[0]);
+		} else {
+			return NULL;
+		}
+	}
+
 	function find_by_email($email)
 	{
 		$result = $this->db->where('email', $email)->limit(1)->get(self::TABLE_NAME)->result();
@@ -92,8 +107,9 @@ class UserModel extends CI_Model
 
 	function create($attributes = [])
 	{
-		$id = $attributes['id'];
-		unset($attributes['id']);
+		if(array_key_exists('id', $attributes)) {
+		  unset($attributes['id']);
+		}
 
 		$this->db->insert(self::TABLE_NAME, $attributes);
 
@@ -103,6 +119,16 @@ class UserModel extends CI_Model
 	function is_email_taken($email)
 	{
 		return $this->db->select('id')->from(self::TABLE_NAME)->where('email', $email)->count_all_results() > 0;
+	}
+
+	function is_uid_taken($uid)
+	{
+		return $this->db->select('id')->from(self::TABLE_NAME)->where('uid', $uid)->count_all_results() > 0;
+	}
+
+	function is_exists($id)
+	{
+		return $this->db->select('id')->from(self::TABLE_NAME)->where('id', intval($id))->count_all_results() > 0;
 	}
 
 	function convert_result_to_model($result) {
@@ -138,7 +164,7 @@ class UserModel extends CI_Model
 		$collection = [];
 		$query = $this->db;
 		if(strlen($_q) > 0) {
-			$query = $query->where('uid', $_q)->or_like('nama_lengkap', $_q);
+			$query = $query->where('id', $_q)->or_where('uid', $_q)->or_like('nama_lengkap', $_q);
 		}
 
 		$results = $query->get(self::TABLE_NAME)->result();
@@ -147,6 +173,21 @@ class UserModel extends CI_Model
 		}
 
 		return $collection;
+	}
+
+	function update($id, $attributes)
+	{
+		$result = $this->db->set('nama_depan', $attributes['nama_depan'])
+							    		 ->set('nama_belakang', $attributes['nama_belakang'])
+										   ->set('nama_lengkap', sprintf("%s %s", $attributes['nama_depan'], $attributes['nama_belakang']))
+										   ->where('id', intval($id))
+											 ->update(self::TABLE_NAME);
+		return $result ? $this->find($id) : FALSE;
+	}
+
+	function delete($id)
+	{
+		return $this->db->where('id', intval($id))->delete(self::TABLE_NAME);
 	}
 }
 ?>
